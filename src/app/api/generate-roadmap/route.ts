@@ -80,17 +80,10 @@ async function enrichRoadmapWithResources(roadmap: Roadmap): Promise<Roadmap> {
             }> = [];
 
             if (isSerpAvailable) {
-              // Search real resources via SerpAPI
-              const webResults = await searchResources(
-                `${roadmap.topic} ${step.title} tutorial`,
-                3
-              );
-              const ytResults = await searchYouTubeResources(
-                `${roadmap.topic} ${step.title}`,
-                3
-              );
+              // Search real resources via SerpAPI - 1 search per step to save quota
+              const searchQuery = `${roadmap.topic} ${step.title} tutorial best`;
+              const allResults = await searchResources(searchQuery, 4);
 
-              const allResults = [...webResults, ...ytResults];
               const seen = new Set<string>();
               resources = allResults
                 .filter((r) => {
@@ -98,7 +91,7 @@ async function enrichRoadmapWithResources(roadmap: Roadmap): Promise<Roadmap> {
                   seen.add(r.url);
                   return r.title && r.title.trim().length > 0;
                 })
-                .slice(0, 6)
+                .slice(0, 5)
                 .map((r) => ({
                   title: r.title,
                   url: r.url,

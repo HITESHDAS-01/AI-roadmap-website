@@ -5,16 +5,26 @@ interface SearchResult {
 }
 
 let lastRequestTime = 0;
-const MIN_DELAY = 1500;
+const MIN_DELAY = 2000;
 
-async function rateLimitedFetch(url: string): Promise<Response> {
+async function rateLimitedFetch(url: string): Promise<Response | null> {
   const now = Date.now();
   const elapsed = now - lastRequestTime;
   if (elapsed < MIN_DELAY) {
     await new Promise((r) => setTimeout(r, MIN_DELAY - elapsed));
   }
   lastRequestTime = Date.now();
-  return fetch(url);
+
+  try {
+    const response = await fetch(url);
+    if (response.status === 429) {
+      console.warn("SerpAPI rate limited, using fallback");
+      return null;
+    }
+    return response;
+  } catch {
+    return null;
+  }
 }
 
 export async function searchResources(
@@ -27,25 +37,21 @@ export async function searchResources(
     return getFallbackResults(query);
   }
 
+  const params = new URLSearchParams({
+    q: query,
+    api_key: apiKey,
+    num: (numResults + 3).toString(),
+    engine: "google",
+  });
+
+  const response = await rateLimitedFetch(
+    `https://serpapi.com/search.json?${params.toString()}`
+  );
+
+  if (!response) return getFallbackResults(query);
+
   try {
-    const params = new URLSearchParams({
-      q: query,
-      api_key: apiKey,
-      num: (numResults + 3).toString(),
-      engine: "google",
-    });
-
-    const response = await rateLimitedFetch(
-      `https://serpapi.com/search.json?${params.toString()}`
-    );
-
-    if (!response.ok) {
-      console.error(`SerpAPI error: ${response.status}`);
-      return getFallbackResults(query);
-    }
-
     const data = await response.json();
-
     const results: SearchResult[] = (data.organic_results || [])
       .slice(0, numResults + 3)
       .map((r: { title: string; link: string; snippet?: string }) => ({
@@ -55,8 +61,7 @@ export async function searchResources(
       }));
 
     return results.length > 0 ? results : getFallbackResults(query);
-  } catch (error) {
-    console.error("SerpAPI error:", error);
+  } catch {
     return getFallbackResults(query);
   }
 }
@@ -71,26 +76,22 @@ export async function searchYouTubeResources(
     return getFallbackYouTubeResults(query);
   }
 
+  const ytQuery = `${query} youtube.com`;
+  const params = new URLSearchParams({
+    q: ytQuery,
+    api_key: apiKey,
+    num: (numResults + 8).toString(),
+    engine: "google",
+  });
+
+  const response = await rateLimitedFetch(
+    `https://serpapi.com/search.json?${params.toString()}`
+  );
+
+  if (!response) return getFallbackYouTubeResults(query);
+
   try {
-    const ytQuery = `${query} youtube.com`;
-    const params = new URLSearchParams({
-      q: ytQuery,
-      api_key: apiKey,
-      num: (numResults + 8).toString(),
-      engine: "google",
-    });
-
-    const response = await rateLimitedFetch(
-      `https://serpapi.com/search.json?${params.toString()}`
-    );
-
-    if (!response.ok) {
-      console.error(`SerpAPI YouTube error: ${response.status}`);
-      return getFallbackYouTubeResults(query);
-    }
-
     const data = await response.json();
-
     const results: SearchResult[] = (data.organic_results || [])
       .filter((r: { link: string }) => {
         const url = resolveUrl(r.link);
@@ -103,13 +104,8 @@ export async function searchYouTubeResources(
         snippet: r.snippet || "",
       }));
 
-    if (results.length === 0) {
-      return getFallbackYouTubeResults(query);
-    }
-
-    return results;
-  } catch (error) {
-    console.error("YouTube search error:", error);
+    return results.length > 0 ? results : getFallbackYouTubeResults(query);
+  } catch {
     return getFallbackYouTubeResults(query);
   }
 }
@@ -117,11 +113,9 @@ export async function searchYouTubeResources(
 function resolveUrl(url: string): string {
   try {
     const parsed = new URL(url);
-
     if (parsed.hostname.includes("google.com") && parsed.pathname.includes("/url")) {
       return parsed.searchParams.get("q") || parsed.searchParams.get("url") || url;
     }
-
     return url;
   } catch {
     return url;
@@ -130,52 +124,35 @@ function resolveUrl(url: string): string {
 
 function getFallbackResults(query: string): SearchResult[] {
   const encoded = encodeURIComponent(query);
-  return [
-    {
-      title: `${query} - Wikipedia`,
-      url: `https://en.wikipedia.org/wiki/Special:Search?search=${encoded}`,
-      snippet: `Wikipedia articles about ${query}`,
-    },
-    {
-      title: `${query} - MDN Web Docs`,
-      url: `https://developer.mozilla.org/en-US/search?q=${encoded}`,
-      snippet: `Documentation for ${query}`,
-    },
-    {
-      title: `${query} on freeCodeCamp`,
-      url: `https://www.freecodecamp.org/news/search/?query=${encoded}`,
-      snippet: `Tutorials on ${query} from freeCodeCamp`,
-    },
-    {
-      title: `${query} on Dev.to`,
-      url: `https://dev.to/search?q=${encoded}`,
-      snippet: `Community articles about ${query}`,
-    },
-    {
-      title: `${query} on GeeksforGeeks`,
-      url: `https://www.geeksforgeeks.org/search/?q=${encoded}`,
-      snippet: `Programming tutorials on ${query}`,
-    },
+  const topic = query.replace(/tutorial|course|learn|guide|basics|advanced|beginners/gi, "").trim();
+
+  const curated = [
+    { title: `${topic} - freeCodeCamp`, url: `https://www.freecodecamp.org/news/search/?query=${encoded}`, snippet: `Free ${topic} tutorials and courses from freeCodeCamp` },
+    { title: `${topic} - MDN Web Docs`, url: `https://developer.mozilla.org/en-US/search?q=${encoded}`, snippet: `Official documentation and guides for ${topic}` },
+    { title: `${topic} - GeeksforGeeks`, url: `https://www.geeksforgeeks.org/search/?q=${encoded}`, snippet: `Programming articles and tutorials on ${topic}` },
+    { title: `${topic} - Dev.to`, url: `https://dev.to/search?q=${encoded}`, snippet: `Community articles about ${topic}` },
+    { title: `${topic} - W3Schools`, url: `https://www.w3schools.com/search/search_result.asp?${encoded}`, snippet: `Web development tutorials for ${topic}` },
+    { title: `${topic} - Tutorialspoint`, url: `https://www.tutorialspoint.com/search.htm?search=${encoded}`, snippet: `Simple and easy learning for ${topic}` },
+    { title: `${topic} - HackerRank`, url: `https://www.hackerrank.com/domains/${topic.toLowerCase().replace(/\s+/g, "-")}`, snippet: `Practice ${topic} problems on HackerRank` },
+    { title: `${topic} - LeetCode`, url: `https://leetcode.com/problemset/`, snippet: `Coding practice and challenges` },
+    { title: `${topic} - Coursera`, url: `https://www.coursera.org/search?query=${encoded}`, snippet: `University courses on ${topic}` },
+    { title: `${topic} - edX`, url: `https://www.edx.org/search?q=${encoded}`, snippet: `Online courses from top universities on ${topic}` },
   ];
+
+  return curated.slice(0, 5);
 }
 
 function getFallbackYouTubeResults(query: string): SearchResult[] {
-  const encoded = encodeURIComponent(query + " tutorial for beginners");
-  return [
-    {
-      title: `${query} Tutorial for Beginners - YouTube`,
-      url: `https://www.youtube.com/results?search_query=${encoded}`,
-      snippet: `Best YouTube tutorials for learning ${query} from scratch`,
-    },
-    {
-      title: `${query} Full Course - YouTube`,
-      url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query + " full course 2024")}`,
-      snippet: `Complete ${query} course on YouTube`,
-    },
-    {
-      title: `${query} Crash Course - YouTube`,
-      url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query + " crash course")}`,
-      snippet: `Quick crash course on ${query}`,
-    },
+  const topic = query.replace(/youtube|tutorial|course|learn|guide|basics|advanced|beginners/gi, "").trim();
+  const encoded = encodeURIComponent(topic + " tutorial");
+
+  const curated = [
+    { title: `${topic} Tutorial for Beginners - YouTube`, url: `https://www.youtube.com/results?search_query=${encoded}`, snippet: `Best YouTube tutorials for ${topic}` },
+    { title: `${topic} Full Course - YouTube`, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(topic + " full course 2024")}`, snippet: `Complete ${topic} course on YouTube` },
+    { title: `${topic} Crash Course - YouTube`, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(topic + " crash course")}`, snippet: `Quick crash course on ${topic}` },
+    { title: `${topic} Projects - YouTube`, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(topic + " projects for beginners")}`, snippet: `Build projects to learn ${topic}` },
+    { title: `${topic} Roadmap - YouTube`, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(topic + " roadmap 2024")}`, snippet: `Learning path for ${topic}` },
   ];
+
+  return curated;
 }
