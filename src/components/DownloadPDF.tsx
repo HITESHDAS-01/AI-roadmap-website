@@ -195,9 +195,9 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
 
-        // Watermark - diagonal faint text
+        // Watermark - diagonal very faint text (behind content visually)
         doc.setFontSize(40);
-        doc.setTextColor(240, 240, 240);
+        doc.setTextColor(248, 248, 248);
         doc.setFont("helvetica", "bold");
         const centerX = pageWidth / 2;
         const centerY = doc.internal.pageSize.getHeight() / 2;
@@ -206,7 +206,7 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
           angle: 45,
         });
         doc.setFontSize(12);
-        doc.setTextColor(245, 245, 245);
+        doc.setTextColor(250, 250, 250);
         doc.setFont("helvetica", "normal");
         doc.text(siteUrl, centerX, centerY + 5, {
           align: "center",
