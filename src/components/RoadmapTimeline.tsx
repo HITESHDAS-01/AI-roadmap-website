@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Calendar, BookOpen, TrendingUp } from "lucide-react";
+import { Clock, Calendar, BookOpen, TrendingUp, GraduationCap, ExternalLink, Star } from "lucide-react";
 import PhaseCard from "./PhaseCard";
 import DownloadPDF from "./DownloadPDF";
 import ShareButton from "./ShareButton";
@@ -12,6 +12,14 @@ export default function RoadmapTimeline({ roadmap }: { roadmap: Roadmap }) {
     (acc, phase) => acc + phase.steps.reduce((a, step) => a + step.resources.length, 0),
     0
   );
+  const courses = roadmap.popularCourses || [];
+
+  // Group courses by platform
+  const groupedCourses = courses.reduce((acc, course) => {
+    if (!acc[course.platform]) acc[course.platform] = [];
+    acc[course.platform].push(course);
+    return acc;
+  }, {} as Record<string, typeof courses>);
 
   return (
     <div className="w-full">
@@ -78,6 +86,71 @@ export default function RoadmapTimeline({ roadmap }: { roadmap: Roadmap }) {
           </div>
         </div>
       </div>
+
+      {/* Popular Courses Section */}
+      {courses.length > 0 && (
+        <div className="mt-12 pt-8 border-t border-white/5">
+          <div className="flex items-center gap-2 mb-6">
+            <GraduationCap className="w-5 h-5 text-purple-400" />
+            <h2 className="text-xl font-bold text-white">
+              Best Courses to Learn {roadmap.topic}
+            </h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-6">
+            Top-rated courses from popular platforms to accelerate your learning
+          </p>
+
+          <div className="space-y-6">
+            {Object.entries(groupedCourses).map(([platform, platformCourses]) => (
+              <div key={platform}>
+                <h3 className="text-sm font-semibold text-purple-400 mb-3 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  {platform}
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {platformCourses.map((course, i) => (
+                    <a
+                      key={i}
+                      href={course.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:border-purple-500/20 hover:bg-purple-500/5 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-sm font-medium text-white group-hover:text-purple-400 transition-colors truncate">
+                              {course.title}
+                            </h4>
+                            <ExternalLink className="w-3 h-3 text-gray-600 group-hover:text-purple-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <p className="text-xs text-gray-500 line-clamp-1 mb-2">
+                            {course.description}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            {course.free ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/15">
+                                Free
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/15">
+                                Paid
+                              </span>
+                            )}
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-gray-400 border border-white/5">
+                              {platform}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-12 pt-6 border-t border-white/5 text-center">
