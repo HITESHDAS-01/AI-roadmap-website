@@ -6,14 +6,14 @@ function getClient() {
   return new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 }
 
-const ROADMAP_SYSTEM_PROMPT = `You are an expert educational curriculum designer. You have access to Google Search to find the best, most up-to-date learning resources.
+const ROADMAP_PROMPT = `Generate a learning roadmap as JSON. Follow this EXACT structure - field names must match exactly:
 
-When generating a roadmap, return ONLY valid JSON in this exact structure:
 {
   "topic": "the topic",
   "title": "catchy title",
   "description": "brief overview",
   "totalEstimatedTime": "e.g. 6 months",
+  "generatedAt": "2026-01-01T00:00:00.000Z",
   "phases": [
     {
       "id": "phase-1",
@@ -26,43 +26,31 @@ When generating a roadmap, return ONLY valid JSON in this exact structure:
           "title": "Step title",
           "description": "Detailed description",
           "duration": "estimated time",
-          "difficulty": "beginner|intermediate|advanced",
+          "difficulty": "beginner",
           "resources": [
             {
-              "title": "Exact title of the resource",
-              "url": "FULL and COMPLETE URL (not truncated)",
-              "type": "video|course|article|tool|project",
-              "source": "Platform name (YouTube, Udemy, etc)",
-              "description": "What this resource covers",
+              "title": "Resource title",
+              "url": "FULL working URL",
+              "type": "video",
+              "source": "YouTube",
+              "description": "What it covers",
               "free": true
             }
           ],
-          "tips": ["helpful tips"]
+          "tips": ["helpful tips"],
+          "prerequisites": []
         }
       ]
     }
   ]
 }
 
-CRITICAL RULES for resources:
-1. You MUST search the web using Google Search to find REAL, working URLs
-2. For each step, find 3-5 genuine resources (mix of YouTube videos, courses, articles, tools)
-3. URLs must be COMPLETE and REAL - never make up or truncate URLs
-4. Prefer FREE resources, but include paid if significantly better
-5. Include variety: YouTube videos, official docs, free courses, interactive tools
-6. Resources must be recent and up-to-date (prefer 2023-2026 content)
-7. Return ONLY the JSON object, no markdown, no explanation`;
-
-const RESOURCE_SEARCH_PROMPT = `Search the web and find the BEST learning resources for each step of this roadmap.
-For EVERY step, you MUST find and include 3-5 REAL resources with COMPLETE URLs.
-
-Requirements:
-1. Search for each topic to find real YouTube videos, courses, articles, and tools
-2. URLs must be complete and working (e.g., https://www.youtube.com/watch?v=XXXXX)
-3. Include free resources from: YouTube, freeCodeCamp, MDN, official docs, GeeksforGeeks, Dev.to, Codecademy
-4. Also include quality paid resources from: Udemy, Coursera, Pluralsight
-5. Each resource must have: title, full URL, type, source, description, whether it's free
-6. Do NOT make up URLs - only include resources you actually found through search`;
+Rules:
+1. Field names MUST match exactly: topic, title, description, totalEstimatedTime, phases, id, steps, resources, etc.
+2. For each step include 3-5 REAL resources with COMPLETE URLs (YouTube, courses, articles)
+3. Prefer FREE resources
+4. Generate 3-6 phases with 2-4 steps each
+5. Return ONLY the JSON object, no markdown, no explanation`;
 
 export async function generateRoadmapWithGemini(
   topic: string,
@@ -73,31 +61,34 @@ export async function generateRoadmapWithGemini(
   if (!genAI) throw new Error("Gemini API key not configured");
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-3.5-flash",
-    systemInstruction: ROADMAP_SYSTEM_PROMPT,
-    tools: [{ googleSearch: {} }],
+    model: "gemini-3.5-flash-lite",
   });
 
   const levelText = level === "all" ? "all levels" : level;
 
-  const prompt = `Create a comprehensive learning roadmap for: "${topic}"
+  const fullPrompt = `${ROADMAP_PROMPT}
 
+Generate a roadmap for: "${topic}"
 Target level: ${levelText}
-${maxDuration ? `Max time: ${maxDuration}` : ""}
+${maxDuration ? `Max time: ${maxDuration}` : ""}`;
 
-IMPORTANT: Use Google Search to find REAL resources for each step. Do NOT invent URLs.
-Search for the best YouTube tutorials, free courses, documentation, and tools for each topic.
-
-Return ONLY valid JSON.`;
-
-  const result = await model.generateContent(prompt);
+  const result = await model.generateContent(fullPrompt);
   const response = result.response;
 
   let text = response.text();
   text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
 
-  const roadmap: Roadmap = JSON.parse(text);
-  return roadmap;
+  // Try to fix common JSON issues
+  try {
+    const roadmap: Roadmap = JSON.parse(text);
+    return roadmap;
+  } catch {
+    // If wrapped in extra key, try to unwrap
+    const parsed = JSON.parse(text);
+    if (parsed.roadmap) return parsed.roadmap as Roadmap;
+    if (parsed.data) return parsed.data as Roadmap;
+    throw new Error("Invalid roadmap JSON from Gemini");
+  }
 }
 
 export async function searchResourcesWithGemini(
@@ -108,19 +99,13 @@ export async function searchResourcesWithGemini(
 
   try {
     const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-lite",
-      tools: [{ googleSearch: {} }],
+      model: "gemini-3.5-flash-lite",
     });
 
-    const prompt = `Search the web for: "${query}"
-Find the 5 best learning resources. Return ONLY a JSON array with objects:
-{ "title": "resource title", "url": "full URL", "type": "video|course|article|tool", "source": "platform name", "description": "what it covers", "free": true/false }
-
-Rules:
-- URLs must be complete and real
-- Mix of YouTube videos, articles, courses
-- Prefer free resources
-- Return ONLY the JSON array`;
+    const prompt = `Find the 5 best learning resources for: "${query}"
+Return ONLY a JSON array:
+[{"title":"title","url":"full URL","type":"video","source":"YouTube","description":"what it covers","free":true}]
+Real URLs only, mix types, prefer free, JSON only`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();

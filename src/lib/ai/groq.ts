@@ -18,7 +18,7 @@ export async function generateRoadmapWithGroq(
   const prompt = buildRoadmapPrompt(topic, level, maxDuration);
 
   const completion = await groq.chat.completions.create({
-    model: "qwen/qwen3.8-27b",
+    model: "openai/gpt-oss-120b",
     messages: [
       { role: "system", content: ROADMAP_SYSTEM_PROMPT },
       { role: "user", content: prompt },
@@ -43,7 +43,7 @@ export async function filterResourcesWithGroq(
   if (!groq) return [];
 
   const completion = await groq.chat.completions.create({
-    model: "qwen/qwen3.8-27b",
+    model: "openai/gpt-oss-120b",
     messages: [
       {
         role: "system",
