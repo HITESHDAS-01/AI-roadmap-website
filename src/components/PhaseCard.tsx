@@ -1,145 +1,246 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Clock, Zap, Lightbulb } from "lucide-react";
+import { ChevronDown, Clock, Zap, Lightbulb, BookOpen } from "lucide-react";
 import ResourceCard from "./ResourceCard";
 import type { RoadmapPhase } from "@/types/roadmap";
 
-const difficultyColors: Record<string, string> = {
-  beginner: "bg-green-500/10 text-green-400 border-green-500/20",
-  intermediate: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  advanced: "bg-red-500/10 text-red-400 border-red-500/20",
+const difficultyConfig: Record<string, { color: string; bg: string; icon: string }> = {
+  beginner: { color: "text-green-400", bg: "bg-green-500/10 border-green-500/20", icon: "1" },
+  intermediate: { color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20", icon: "2" },
+  advanced: { color: "text-red-400", bg: "bg-red-500/10 border-red-500/20", icon: "3" },
 };
 
-export default function PhaseCard({ phase, index }: { phase: RoadmapPhase; index: number }) {
+const phaseColors = [
+  "from-purple-500 to-violet-500",
+  "from-blue-500 to-cyan-500",
+  "from-green-500 to-emerald-500",
+  "from-orange-500 to-amber-500",
+  "from-pink-500 to-rose-500",
+  "from-teal-500 to-cyan-500",
+];
+
+export default function PhaseCard({
+  phase,
+  index,
+  total,
+}: {
+  phase: RoadmapPhase;
+  index: number;
+  total: number;
+}) {
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+  const [isPhaseExpanded, setIsPhaseExpanded] = useState(index < 2);
 
   const toggleStep = (stepId: string) => {
     setExpandedSteps((prev) => {
       const next = new Set(prev);
-      if (next.has(stepId)) {
-        next.delete(stepId);
-      } else {
-        next.add(stepId);
-      }
+      if (next.has(stepId)) next.delete(stepId);
+      else next.add(stepId);
       return next;
     });
   };
 
+  const expandAll = () => {
+    if (expandedSteps.size === phase.steps.length) {
+      setExpandedSteps(new Set());
+    } else {
+      setExpandedSteps(new Set(phase.steps.map((s) => s.id)));
+    }
+  };
+
+  const colorClass = phaseColors[index % phaseColors.length];
+
   return (
-    <div className="relative">
-      <div className="flex items-start gap-3 sm:gap-4">
-        <div className="flex flex-col items-center">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-purple-500/20 flex-shrink-0">
+    <div
+      className="relative animate-fade-in-up"
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
+      <div className="flex items-start gap-3 sm:gap-5">
+        {/* Timeline node */}
+        <div className="relative flex flex-col items-center flex-shrink-0">
+          <div
+            className={`timeline-node w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg z-10`}
+          >
             {index + 1}
           </div>
-          {index < 2 && <div className="w-px flex-1 bg-gradient-to-b from-purple-500/30 to-transparent min-h-[100px]" />}
+          {index < total - 1 && (
+            <div className="w-px flex-1 min-h-[40px] bg-gradient-to-b from-white/10 to-transparent" />
+          )}
         </div>
 
-        <div className="flex-1 pb-6 min-w-0 overflow-hidden">
-          <div className="mb-3">
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{phase.title}</h3>
-            <p className="text-gray-500 text-xs sm:text-sm mb-2">{phase.description}</p>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 text-xs text-purple-400">
-                <Clock className="w-3 h-3" />
-                {phase.estimatedTime}
-              </span>
-              <span className="text-xs text-gray-600">
-                {phase.steps.length} steps
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2 mt-3">
-            {phase.steps.map((step) => (
-              <div
-                key={step.id}
-                className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden"
-              >
-                <button
-                  onClick={() => toggleStep(step.id)}
-                  className="w-full flex items-center gap-3 p-3 sm:p-4 text-left hover:bg-white/[0.03] transition-colors"
-                >
-                  {expandedSteps.has(step.id) ? (
-                    <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h4 className="font-medium text-white text-sm truncate">{step.title}</h4>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full border flex-shrink-0 ${
-                          difficultyColors[step.difficulty]
-                        }`}
-                      >
-                        {step.difficulty}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 truncate pr-12">{step.description}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-600 flex-shrink-0">
+        {/* Phase content */}
+        <div className="flex-1 pb-6 min-w-0">
+          {/* Phase header - clickable */}
+          <button
+            onClick={() => setIsPhaseExpanded(!isPhaseExpanded)}
+            className="w-full text-left group"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-purple-400 transition-colors">
+                    {phase.title}
+                  </h3>
+                </div>
+                <p className="text-gray-500 text-xs sm:text-sm mb-2 leading-relaxed">
+                  {phase.description}
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-xs text-purple-400">
                     <Clock className="w-3 h-3" />
-                    {step.duration}
-                  </div>
-                </button>
+                    {phase.estimatedTime}
+                  </span>
+                  <span className="text-xs text-gray-600">
+                    {phase.steps.length} steps
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      expandAll();
+                    }}
+                    className="text-xs text-gray-600 hover:text-purple-400 transition-colors"
+                  >
+                    {expandedSteps.size === phase.steps.length ? "Collapse all" : "Expand all"}
+                  </button>
+                </div>
+              </div>
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 transition-transform duration-300 flex-shrink-0 mt-1 ${
+                  isPhaseExpanded ? "rotate-180" : ""
+                }`}
+              />
+            </div>
+          </button>
 
-                {expandedSteps.has(step.id) && (
-                  <div className="px-3 sm:px-4 pb-4 space-y-3 border-t border-white/5 overflow-hidden">
-                    <div className="pt-3">
-                      <p className="text-sm text-gray-300 mb-3">{step.description}</p>
+          {/* Steps */}
+          {isPhaseExpanded && (
+            <div className="mt-4 space-y-2 animate-slide-down">
+              {phase.steps.map((step, stepIndex) => {
+                const isExpanded = expandedSteps.has(step.id);
+                const diff = difficultyConfig[step.difficulty] || difficultyConfig.beginner;
 
-                      {step.prerequisites && step.prerequisites.length > 0 && (
-                        <div className="mb-3">
-                          <h5 className="text-xs font-medium text-gray-500 mb-1.5">Prerequisites</h5>
-                          <div className="flex flex-wrap gap-1.5">
-                            {step.prerequisites.map((prereq, i) => (
-                              <span
-                                key={i}
-                                className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-gray-400 border border-white/5"
-                              >
-                                {prereq}
-                              </span>
-                            ))}
+                return (
+                  <div
+                    key={step.id}
+                    className="step-card rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden"
+                    style={{ animationDelay: `${stepIndex * 50}ms` }}
+                  >
+                    {/* Step header */}
+                    <button
+                      onClick={() => toggleStep(step.id)}
+                      className="w-full flex items-center gap-3 p-3 sm:p-4 text-left hover:bg-white/[0.03] transition-colors"
+                    >
+                      <div
+                        className={`w-6 h-6 rounded-md ${diff.bg} border flex items-center justify-center flex-shrink-0`}
+                      >
+                        <span className={`text-[10px] font-bold ${diff.color}`}>
+                          {stepIndex + 1}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h4 className="font-medium text-white text-sm truncate">
+                            {step.title}
+                          </h4>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full border flex-shrink-0 capitalize ${diff.bg} ${diff.color}`}
+                          >
+                            {step.difficulty}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 truncate">{step.description}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                          <Clock className="w-3 h-3" />
+                          {step.duration}
+                        </div>
+                        {step.resources.length > 0 && (
+                          <div className="flex items-center gap-1 text-xs text-purple-400">
+                            <BookOpen className="w-3 h-3" />
+                            {step.resources.length}
                           </div>
-                        </div>
-                      )}
+                        )}
+                        <ChevronDown
+                          className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </div>
+                    </button>
 
-                      {step.tips && step.tips.length > 0 && (
-                        <div className="mb-3">
-                          <h5 className="text-xs font-medium text-yellow-400/80 mb-1.5 flex items-center gap-1">
-                            <Lightbulb className="w-3 h-3" /> Tips
-                          </h5>
-                          <ul className="space-y-1">
-                            {step.tips.map((tip, i) => (
-                              <li key={i} className="text-xs text-gray-500 flex items-start gap-1.5">
-                                <Zap className="w-3 h-3 text-yellow-500/50 mt-0.5 flex-shrink-0" />
-                                {tip}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
+                    {/* Expanded content */}
+                    {isExpanded && (
+                      <div className="px-3 sm:px-4 pb-4 space-y-4 border-t border-white/5 animate-slide-down">
+                        <div className="pt-3">
+                          <p className="text-sm text-gray-300 leading-relaxed mb-3">
+                            {step.description}
+                          </p>
 
-                    {step.resources.length > 0 && (
-                      <div>
-                        <h5 className="text-xs font-medium text-purple-400/80 mb-2">
-                          Resources ({step.resources.length})
-                        </h5>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          {step.resources.map((resource, i) => (
-                            <ResourceCard key={i} resource={resource} />
-                          ))}
+                          {/* Prerequisites */}
+                          {step.prerequisites && step.prerequisites.length > 0 && (
+                            <div className="mb-3">
+                              <h5 className="text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">
+                                Prerequisites
+                              </h5>
+                              <div className="flex flex-wrap gap-1.5">
+                                {step.prerequisites.map((prereq, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-gray-400 border border-white/5"
+                                  >
+                                    {prereq}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Tips */}
+                          {step.tips && step.tips.length > 0 && (
+                            <div className="mb-3 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+                              <h5 className="text-xs font-medium text-yellow-400 mb-1.5 flex items-center gap-1">
+                                <Lightbulb className="w-3 h-3" />
+                                Pro Tips
+                              </h5>
+                              <ul className="space-y-1">
+                                {step.tips.map((tip, i) => (
+                                  <li
+                                    key={i}
+                                    className="text-xs text-gray-400 flex items-start gap-1.5"
+                                  >
+                                    <Zap className="w-3 h-3 text-yellow-500/50 mt-0.5 flex-shrink-0" />
+                                    {tip}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
+
+                        {/* Resources */}
+                        {step.resources.length > 0 && (
+                          <div>
+                            <h5 className="text-xs font-medium text-purple-400 mb-2 uppercase tracking-wider">
+                              Resources ({step.resources.length})
+                            </h5>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {step.resources.map((resource, i) => (
+                                <ResourceCard key={i} resource={resource} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

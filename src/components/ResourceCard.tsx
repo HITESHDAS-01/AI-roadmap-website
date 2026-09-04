@@ -1,65 +1,68 @@
 "use client";
 
-import { ExternalLink, Play, BookOpen, FileText, Wrench, GraduationCap } from "lucide-react";
+import { ExternalLink, Play, FileText, Code, GraduationCap, Youtube } from "lucide-react";
 import type { Resource } from "@/types/roadmap";
 
-const typeIcons: Record<string, React.ReactNode> = {
-  video: <Play className="w-3 h-3" />,
-  course: <GraduationCap className="w-3 h-3" />,
-  article: <FileText className="w-3 h-3" />,
-  book: <BookOpen className="w-3 h-3" />,
-  tool: <Wrench className="w-3 h-3" />,
-  project: <Wrench className="w-3 h-3" />,
+const sourceConfig: Record<string, { icon: typeof ExternalLink; color: string; bg: string }> = {
+  YouTube: { icon: Youtube, color: "text-red-400", bg: "bg-red-500/10 border-red-500/15" },
+  Coursera: { icon: GraduationCap, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/15" },
+  MDN: { icon: FileText, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/15" },
+  freeCodeCamp: { icon: Code, color: "text-green-400", bg: "bg-green-500/10 border-green-500/15" },
 };
 
-const typeColors: Record<string, string> = {
-  video: "text-red-400 bg-red-500/10",
-  course: "text-blue-400 bg-blue-500/10",
-  article: "text-green-400 bg-green-500/10",
-  book: "text-yellow-400 bg-yellow-500/10",
-  tool: "text-purple-400 bg-purple-500/10",
-  project: "text-orange-400 bg-orange-500/10",
-};
+function getSourceConfig(source: string, url: string) {
+  if (sourceConfig[source]) return sourceConfig[source];
+  if (url.includes("youtube.com") || url.includes("youtu.be"))
+    return sourceConfig.YouTube;
+  if (url.includes("coursera.org")) return sourceConfig.Coursera;
+  if (url.includes("developer.mozilla.org")) return sourceConfig.MDN;
+  if (url.includes("freecodecamp.org")) return sourceConfig.freeCodeCamp;
+  return { icon: ExternalLink, color: "text-gray-400", bg: "bg-white/5 border-white/10" };
+}
 
 export default function ResourceCard({ resource }: { resource: Resource }) {
+  const config = getSourceConfig(resource.source, resource.url);
+  const Icon = config.icon;
+
   return (
     <a
       href={resource.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block p-3 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-150 overflow-hidden"
+      className="resource-card group flex items-start gap-2.5 p-3 rounded-lg border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all"
     >
-      <div className="flex items-start gap-2.5">
-        <div
-          className={`flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center ${
-            typeColors[resource.type] || typeColors.article
-          }`}
-        >
-          {typeIcons[resource.type] || typeIcons.article}
+      <div
+        className={`w-8 h-8 rounded-lg ${config.bg} border flex items-center justify-center flex-shrink-0`}
+      >
+        <Icon className={`w-4 h-4 ${config.color}`} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <h5 className="text-sm font-medium text-white truncate group-hover:text-purple-400 transition-colors">
+            {resource.title}
+          </h5>
+          <ExternalLink className="w-3 h-3 text-gray-600 group-hover:text-purple-400 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100" />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <h4 className="text-xs font-medium text-gray-200 group-hover:text-white transition-colors line-clamp-1 break-words">
-              {resource.title}
-            </h4>
-            <ExternalLink className="w-2.5 h-2.5 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-          </div>
-          <p className="text-[10px] text-gray-600 line-clamp-1 mb-1.5">
-            {resource.description}
-          </p>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500">
-              {resource.source}
-            </span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 capitalize">
+        <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+          {resource.description}
+        </p>
+        <div className="flex items-center gap-2 mt-1.5">
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded-full border ${config.bg} ${config.color}`}
+          >
+            {resource.source}
+          </span>
+          {resource.type && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-gray-500 border border-white/5 capitalize">
               {resource.type}
             </span>
-            {resource.free && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">
-                Free
-              </span>
-            )}
-          </div>
+          )}
+          {resource.free && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/15">
+              Free
+            </span>
+          )}
         </div>
       </div>
     </a>
