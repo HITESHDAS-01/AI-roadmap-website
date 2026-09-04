@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateRoadmapWithOpenAI } from "@/lib/ai/openai";
-import { generateRoadmapWithGemini, searchResourcesWithGemini } from "@/lib/ai/gemini";
+import { generateRoadmapWithGemini } from "@/lib/ai/gemini";
 import { generateRoadmapWithGroq } from "@/lib/ai/groq";
 import { searchResources, searchYouTubeResources } from "@/lib/search/serpapi";
 import type { Roadmap, GenerateRoadmapRequest } from "@/types/roadmap";
@@ -49,14 +49,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If roadmap has no resources, try to fetch them
-    const hasResources = roadmap.phases?.some((p) =>
-      p.steps?.some((s) => s.resources && s.resources.length > 0)
-    );
-
-    if (!hasResources) {
-      roadmap = await enrichRoadmapWithResources(roadmap);
-    }
+    // Always fetch real resources via SerpAPI (AI-generated URLs are often fake)
+    roadmap = await enrichRoadmapWithResources(roadmap);
 
     return NextResponse.json(roadmap);
   } catch (error) {
@@ -69,7 +63,6 @@ export async function POST(request: NextRequest) {
 }
 
 async function enrichRoadmapWithResources(roadmap: Roadmap): Promise<Roadmap> {
-  const isGeminiAvailable = !!process.env.GEMINI_API_KEY;
   const isSerpAvailable = !!process.env.SERPAPI_KEY;
 
   const enrichedPhases = await Promise.all(
@@ -86,16 +79,16 @@ async function enrichRoadmapWithResources(roadmap: Roadmap): Promise<Roadmap> {
               free: boolean;
             }> = [];
 
-            if (isGeminiAvailable) {
-              // Use Gemini's built-in Google Search
-              const query = `${roadmap.topic} ${step.title} best tutorial 2024 2025`;
-              resources = await searchResourcesWithGemini(query);
-            } else if (isSerpAvailable) {
-              // Fallback to SerpAPI
-              const [webResults, ytResults] = await Promise.all([
-                searchResources(`${roadmap.topic} ${step.title} tutorial`, 3),
-                searchYouTubeResources(`${roadmap.topic} ${step.title}`, 3),
-              ]);
+            if (isSerpAvailable) {
+              // Search real resources via SerpAPI
+              const webResults = await searchResources(
+                `${roadmap.topic} ${step.title} tutorial`,
+                3
+              );
+              const ytResults = await searchYouTubeResources(
+                `${roadmap.topic} ${step.title}`,
+                3
+              );
 
               const allResults = [...webResults, ...ytResults];
               const seen = new Set<string>();
