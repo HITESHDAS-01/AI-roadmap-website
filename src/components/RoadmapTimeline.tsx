@@ -3,6 +3,7 @@
 import { Clock, Calendar, BookOpen, TrendingUp } from "lucide-react";
 import PhaseCard from "./PhaseCard";
 import DownloadPDF from "./DownloadPDF";
+import ShareButton from "./ShareButton";
 import type { Roadmap } from "@/types/roadmap";
 
 export default function RoadmapTimeline({ roadmap }: { roadmap: Roadmap }) {
@@ -46,6 +47,7 @@ export default function RoadmapTimeline({ roadmap }: { roadmap: Roadmap }) {
             <span className="font-medium">{totalResources} Resources</span>
           </div>
           <DownloadPDF roadmap={roadmap} />
+          <ShareButton topic={roadmap.topic} title={roadmap.title} />
         </div>
       </div>
 
