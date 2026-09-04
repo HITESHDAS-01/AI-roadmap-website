@@ -13,6 +13,7 @@ export interface RoadmapStep {
   title: string;
   description: string;
   summary: string;
+  aiPrompt: string;
   duration: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   resources: Resource[];

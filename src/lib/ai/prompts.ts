@@ -19,6 +19,7 @@ When generating a roadmap, you MUST follow this exact JSON structure:
           "title": "Step title",
           "description": "Detailed description of what to learn",
           "summary": "2-3 sentence summary of what the learner will accomplish and why it matters",
+          "aiPrompt": "Professional prompt to give to AI chatbot to learn this step easily",
           "duration": "estimated time for this step",
           "difficulty": "beginner|intermediate|advanced",
           "resources": [],

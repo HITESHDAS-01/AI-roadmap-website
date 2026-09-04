@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Clock, Zap, Lightbulb, BookOpen } from "lucide-react";
+import { ChevronDown, Clock, Zap, Lightbulb, BookOpen, Copy, Check } from "lucide-react";
 import ResourceCard from "./ResourceCard";
 import type { RoadmapPhase } from "@/types/roadmap";
 
@@ -231,6 +231,24 @@ export default function PhaseCard({
                               </ul>
                             </div>
                           )}
+
+                          {/* AI Prompt */}
+                          {step.aiPrompt && (
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <h5 className="text-xs font-medium text-cyan-400 flex items-center gap-1 uppercase tracking-wider">
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                  </svg>
+                                  Learn with AI Chatbot
+                                </h5>
+                                <AICopyButton prompt={step.aiPrompt} />
+                              </div>
+                              <p className="text-xs text-gray-400 bg-cyan-500/5 border border-cyan-500/10 rounded-lg p-2.5 leading-relaxed">
+                                {step.aiPrompt}
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         {/* Resources */}
@@ -256,5 +274,45 @@ export default function PhaseCard({
         </div>
       </div>
     </div>
+  );
+}
+
+function AICopyButton({ prompt }: { prompt: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = prompt;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors border border-cyan-500/15"
+    >
+      {copied ? (
+        <>
+          <Check className="w-3 h-3" />
+          Copied!
+        </>
+      ) : (
+        <>
+          <Copy className="w-3 h-3" />
+          Copy Prompt
+        </>
+      )}
+    </button>
   );
 }

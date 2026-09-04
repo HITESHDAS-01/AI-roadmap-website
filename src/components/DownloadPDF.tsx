@@ -165,6 +165,22 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
             y += 2;
           }
 
+          // AI Prompt
+          if (step.aiPrompt) {
+            checkPage(20);
+            doc.setTextColor(0, 150, 180);
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.text("AI Learning Prompt (Copy & paste in ChatGPT/Gemini):", margin + 18, y);
+            y += 5;
+            doc.setTextColor(80, 80, 80);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            const promptLines = doc.splitTextToSize(step.aiPrompt, contentWidth - 24);
+            doc.text(promptLines, margin + 18, y);
+            y += promptLines.length * 3.5 + 3;
+          }
+
           // Resources
           if (step.resources.length > 0) {
             doc.setTextColor(168, 85, 247);

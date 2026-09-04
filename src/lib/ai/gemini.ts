@@ -26,6 +26,7 @@ const ROADMAP_PROMPT = `Generate a learning roadmap as JSON. Follow this EXACT s
           "title": "Step title",
           "description": "Detailed description",
           "summary": "2-3 sentence summary of what the learner will accomplish and why it matters",
+          "aiPrompt": "Professional prompt to give to AI chatbot like ChatGPT/Gemini to learn this step. Example: 'Act as an expert teacher. Teach me [topic] step by step with examples, exercises, and real-world applications. Start from basics and gradually increase difficulty.'",
           "duration": "estimated time",
           "difficulty": "beginner",
           "resources": [
