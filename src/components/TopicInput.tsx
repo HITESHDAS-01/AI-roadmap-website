@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Sparkles, ArrowRight, TrendingUp } from "lucide-react";
+import { Search, Sparkles, ArrowRight, TrendingUp, Loader2 } from "lucide-react";
 
 const SUGGESTIONS = [
   { name: "Web Development", category: "Development" },
@@ -21,6 +21,7 @@ export default function TopicInput() {
   const [topic, setTopic] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -37,15 +38,18 @@ export default function TopicInput() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (topic.trim()) {
+    if (topic.trim() && !isGenerating) {
+      setIsGenerating(true);
       const params = new URLSearchParams({ topic: topic.trim() });
       router.push(`/roadmap?${params.toString()}`);
     }
   };
 
   const handleSuggestion = (name: string) => {
+    if (isGenerating) return;
     setTopic(name);
     setShowSuggestions(false);
+    setIsGenerating(true);
     const params = new URLSearchParams({ topic: name });
     router.push(`/roadmap?${params.toString()}`);
   };
@@ -78,7 +82,7 @@ export default function TopicInput() {
               setShowSuggestions(true);
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && topic.trim()) {
+              if (e.key === "Enter" && topic.trim() && !isGenerating) {
                 e.preventDefault();
                 handleSubmit(e);
               }
@@ -88,24 +92,38 @@ export default function TopicInput() {
               setShowSuggestions(true);
             }}
             onBlur={() => setIsFocused(false)}
-            placeholder="Enter any topic... (e.g., Web Development, Machine Learning)"
-            className="w-full bg-transparent text-white placeholder-gray-600 text-sm sm:text-base py-4 pl-10 pr-32 focus:outline-none rounded-xl"
+            placeholder={isGenerating ? "Generating roadmap..." : "Enter any topic... (e.g., Web Development, Machine Learning)"}
+            disabled={isGenerating}
+            className="w-full bg-transparent text-white placeholder-gray-600 text-sm sm:text-base py-4 pl-10 pr-32 focus:outline-none rounded-xl disabled:opacity-50"
           />
           <div className="absolute right-1.5">
             <button
               type="submit"
-              disabled={!topic.trim()}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 hover:opacity-90 transition-opacity disabled:opacity-20 disabled:cursor-not-allowed"
+              disabled={!topic.trim() || isGenerating}
+              className={`relative bg-gradient-to-r from-purple-500 to-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all disabled:opacity-20 disabled:cursor-not-allowed ${
+                isGenerating
+                  ? "from-purple-600 to-blue-600 scale-95"
+                  : "hover:opacity-90 hover:scale-[1.02] active:scale-95"
+              }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              Generate
-              <ArrowRight className="w-3.5 h-3.5" />
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Generating
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Generate
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
           </div>
         </div>
       </form>
 
-      {showSuggestions && (
+      {showSuggestions && !isGenerating && (
         <div className="mt-2 p-2 rounded-xl bg-white/[0.03] border border-white/5 backdrop-blur-xl">
           <div className="flex items-center gap-1.5 px-2 py-1.5 mb-1">
             <TrendingUp className="w-3 h-3 text-gray-600" />
