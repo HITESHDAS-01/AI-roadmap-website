@@ -3,7 +3,7 @@ import { generateRoadmapWithOpenAI } from "@/lib/ai/openai";
 import { generateRoadmapWithGemini } from "@/lib/ai/gemini";
 import { generateRoadmapWithGroq } from "@/lib/ai/groq";
 import { searchResources, searchYouTubeResources } from "@/lib/search/serpapi";
-import type { Roadmap, GenerateRoadmapRequest } from "@/types/roadmap";
+import type { Roadmap, RoadmapPhase, RoadmapStep, Resource, GenerateRoadmapRequest } from "@/types/roadmap";
 
 export async function POST(request: NextRequest) {
   try {
@@ -132,14 +132,7 @@ async function enrichRoadmapWithResources(roadmap: Roadmap): Promise<Roadmap> {
       const enrichedSteps = await Promise.all(
         phase.steps.map(async (step) => {
           try {
-            let resources: Array<{
-              title: string;
-              url: string;
-              type: string;
-              source: string;
-              description: string;
-              free: boolean;
-            }> = [];
+            let resources: Resource[] = [];
 
             if (isSerpAvailable) {
               // Search YouTube specifically (1 search)
@@ -163,7 +156,7 @@ async function enrichRoadmapWithResources(roadmap: Roadmap): Promise<Roadmap> {
                 .map((r) => ({
                   title: r.title,
                   url: r.url,
-                  type: detectResourceType(r.url),
+                  type: detectResourceType(r.url) as "video" | "course" | "article" | "book" | "tool" | "project",
                   source: detectSource(r.url),
                   description: r.snippet || `Learn ${step.title}`,
                   free: !r.url.includes("udemy.com") && !r.url.includes("coursera.org"),
