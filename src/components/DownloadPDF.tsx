@@ -6,6 +6,7 @@ import type { Roadmap } from "@/types/roadmap";
 
 export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
   const [generating, setGenerating] = useState(false);
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : "roadmapai.dev";
 
   const handleDownload = async () => {
     setGenerating(true);
@@ -17,6 +18,10 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
       const margin = 20;
       const contentWidth = pageWidth - margin * 2;
       let y = margin;
+
+      // Get site name from URL
+      const siteName = siteUrl.replace("https://", "").replace("http://", "").split(".")[0];
+      const displayName = siteName.charAt(0).toUpperCase() + siteName.slice(1);
 
       const checkPage = (needed: number) => {
         if (y + needed > doc.internal.pageSize.getHeight() - 20) {
@@ -34,7 +39,7 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
       doc.setTextColor(168, 85, 247);
       doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
-      doc.text("RoadmapAI", margin, 18);
+      doc.text(displayName, margin, 18);
 
       doc.setTextColor(200, 200, 200);
       doc.setFontSize(10);
@@ -43,7 +48,7 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
 
       doc.setTextColor(120, 120, 120);
       doc.setFontSize(8);
-      doc.text(`Generated on ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, margin, 34);
+      doc.text(`Generated on ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} from ${siteUrl}`, margin, 34);
 
       y = 50;
 
@@ -196,14 +201,14 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
         doc.setFont("helvetica", "bold");
         const centerX = pageWidth / 2;
         const centerY = doc.internal.pageSize.getHeight() / 2;
-        doc.text("RoadmapAI", centerX, centerY - 10, {
+        doc.text(displayName, centerX, centerY - 10, {
           align: "center",
           angle: 45,
         });
         doc.setFontSize(12);
         doc.setTextColor(245, 245, 245);
         doc.setFont("helvetica", "normal");
-        doc.text("roadmapai.dev", centerX, centerY + 5, {
+        doc.text(siteUrl, centerX, centerY + 5, {
           align: "center",
           angle: 45,
         });
@@ -220,7 +225,7 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
           doc.text("Built by Pranjit", pageWidth / 2, doc.internal.pageSize.getHeight() - 12, { align: "center" });
           doc.setFontSize(7);
           doc.setTextColor(180, 180, 180);
-          doc.text("AI-Powered Learning Roadmaps | roadmapai.dev", pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+          doc.text(`AI-Powered Learning Roadmaps | ${siteUrl}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
         }
       }
 
