@@ -195,37 +195,40 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
 
-        // Watermark - diagonal very faint text (behind content visually)
-        doc.setFontSize(40);
-        doc.setTextColor(248, 248, 248);
+        // Vertical watermark on right margin
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const rightX = pageWidth - 5;
+
+        // Site name - vertical (top to bottom)
+        doc.setFontSize(7);
+        doc.setTextColor(215, 215, 215);
         doc.setFont("helvetica", "bold");
-        const centerX = pageWidth / 2;
-        const centerY = doc.internal.pageSize.getHeight() / 2;
-        doc.text(displayName, centerX, centerY - 10, {
-          align: "center",
-          angle: 45,
-        });
-        doc.setFontSize(12);
-        doc.setTextColor(250, 250, 250);
+        for (let j = 0; j < displayName.length; j++) {
+          doc.text(displayName[j], rightX, 40 + j * 3.2, { align: "right" });
+        }
+
+        // URL - vertical (below name)
+        doc.setFontSize(5);
+        doc.setTextColor(225, 225, 225);
         doc.setFont("helvetica", "normal");
-        doc.text(siteUrl, centerX, centerY + 5, {
-          align: "center",
-          angle: 45,
-        });
+        const urlShort = siteUrl.replace("https://", "").replace("http://", "");
+        for (let j = 0; j < urlShort.length; j++) {
+          doc.text(urlShort[j], rightX, 40 + displayName.length * 3.2 + 8 + j * 2.8, { align: "right" });
+        }
 
         // Page number
         doc.setFontSize(7);
         doc.setTextColor(180, 180, 180);
-        doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 3, { align: "center" });
+        doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 3, { align: "center" });
 
         // Last page credits
         if (i === totalPages) {
           doc.setFontSize(8);
           doc.setTextColor(140, 140, 140);
-          doc.text("Built by Pranjit", pageWidth / 2, doc.internal.pageSize.getHeight() - 12, { align: "center" });
+          doc.text("Built by Pranjit", pageWidth / 2, pageHeight - 12, { align: "center" });
           doc.setFontSize(7);
           doc.setTextColor(180, 180, 180);
-          doc.text(`AI-Powered Learning Roadmaps | ${siteUrl}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+          doc.text(`AI-Powered Learning Roadmaps | ${siteUrl}`, pageWidth / 2, pageHeight - 8, { align: "center" });
         }
       }
 
