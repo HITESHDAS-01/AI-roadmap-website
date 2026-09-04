@@ -199,6 +199,70 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
         y += 8;
       }
 
+      // Popular Online Courses Section
+      checkPage(80);
+      y += 5;
+
+      // Divider
+      doc.setDrawColor(168, 85, 247);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 10;
+
+      doc.setTextColor(168, 85, 247);
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text("Explore More on Popular Platforms", margin, y);
+      y += 8;
+
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Continue your learning journey with these top platforms:", margin, y);
+      y += 10;
+
+      const topic = roadmap.topic;
+      const encoded = encodeURIComponent(topic);
+
+      const platforms = [
+        { name: "Coursera", desc: "University courses & certificates", url: `https://www.coursera.org/search?query=${encoded}` },
+        { name: "Udemy", desc: "Affordable practical courses", url: `https://www.udemy.com/courses/search/?q=${encoded}` },
+        { name: "edX", desc: "Harvard, MIT & top university courses", url: `https://www.edx.org/search?q=${encoded}` },
+        { name: "freeCodeCamp", desc: "Free coding bootcamps & tutorials", url: `https://www.freecodecamp.org/news/search/?query=${encoded}` },
+        { name: "Khan Academy", desc: "Free world-class education", url: `https://www.khanacademy.org/search?search_query=${encoded}` },
+        { name: "LinkedIn Learning", desc: "Professional skill development", url: `https://www.linkedin.com/learning/search?keywords=${encoded}` },
+        { name: "Pluralsight", desc: "Tech skills & certifications", url: `https://www.pluralsight.com/search?q=${encoded}` },
+        { name: "Skillshare", desc: "Creative & practical skills", url: `https://www.skillshare.com/en/search?query=${encoded}` },
+        { name: "MIT OpenCourseWare", desc: "Free MIT course materials", url: `https://ocw.mit.edu/search/?q=${encoded}` },
+        { name: "Stanford Online", desc: "Stanford courses & programs", url: `https://online.stanford.edu/search?q=${encoded}` },
+      ];
+
+      for (const platform of platforms) {
+        checkPage(12);
+
+        // Platform name
+        doc.setTextColor(40, 40, 40);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text(`• ${platform.name}`, margin + 2, y);
+        y += 5;
+
+        // Description
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(platform.desc, margin + 8, y);
+        y += 4;
+
+        // URL
+        doc.setTextColor(100, 140, 200);
+        doc.setFontSize(8);
+        doc.text(platform.url, margin + 8, y);
+        y += 7;
+      }
+
+      y += 5;
+
       // Footer + Watermark on every page
       const totalPages = doc.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
