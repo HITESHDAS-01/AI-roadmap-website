@@ -27,14 +27,26 @@ export async function POST(request: NextRequest) {
       roadmap = await generateRoadmapWithGroq(topic, level, maxDuration);
     } else if (provider === "openai" && process.env.OPENAI_API_KEY) {
       roadmap = await generateRoadmapWithOpenAI(topic, level, maxDuration);
-    } else if (process.env.GEMINI_API_KEY) {
-      roadmap = await generateRoadmapWithGemini(topic, level, maxDuration);
-    } else if (process.env.OPENAI_API_KEY) {
-      roadmap = await generateRoadmapWithOpenAI(topic, level, maxDuration);
-    } else if (process.env.GROQ_API_KEY) {
-      roadmap = await generateRoadmapWithGroq(topic, level, maxDuration);
     } else {
-      roadmap = generateFallbackRoadmap(topic);
+      // Auto mode: try Gemini first, fallback to Groq
+      if (process.env.GEMINI_API_KEY) {
+        try {
+          roadmap = await generateRoadmapWithGemini(topic, level, maxDuration);
+        } catch (err) {
+          console.error("Gemini failed, trying Groq:", err);
+          if (process.env.GROQ_API_KEY) {
+            roadmap = await generateRoadmapWithGroq(topic, level, maxDuration);
+          } else {
+            throw err;
+          }
+        }
+      } else if (process.env.OPENAI_API_KEY) {
+        roadmap = await generateRoadmapWithOpenAI(topic, level, maxDuration);
+      } else if (process.env.GROQ_API_KEY) {
+        roadmap = await generateRoadmapWithGroq(topic, level, maxDuration);
+      } else {
+        roadmap = generateFallbackRoadmap(topic);
+      }
     }
 
     // If roadmap has no resources, try to fetch them
