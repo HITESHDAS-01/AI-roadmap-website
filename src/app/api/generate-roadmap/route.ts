@@ -217,27 +217,27 @@ async function searchPopularCourses(roadmap: Roadmap): Promise<Roadmap> {
     description: string;
     free: boolean;
   }> = [
-    // Coursera
+    // Coursera - use correct search URL format
     {
       platform: "Coursera",
-      title: `${topic} Specialization`,
-      url: `https://www.coursera.org/search?query=${encoded}&topic=${encoded}`,
+      title: `${topic} Courses`,
+      url: `https://www.coursera.org/courses?query=${encoded}`,
       description: `University-level ${topic} courses from top institutions`,
       free: false,
     },
     {
       platform: "Coursera",
-      title: `${topic} Professional Certificate`,
-      url: `https://www.coursera.org/professional-certificates?query=${encoded}`,
-      description: `Professional ${topic} certification programs`,
+      title: `${topic} Specializations`,
+      url: `https://www.coursera.org/browse?query=${encoded}`,
+      description: `Professional ${topic} learning paths`,
       free: false,
     },
     // Udemy
     {
       platform: "Udemy",
-      title: `${topic} - Top Rated Courses`,
+      title: `${topic} - Bestseller Courses`,
       url: `https://www.udemy.com/courses/search/?q=${encoded}&sort=relevance&ratings=4.0`,
-      description: `Best-rated ${topic} courses on Udemy`,
+      description: `Top-rated ${topic} courses on Udemy`,
       free: false,
     },
     {
@@ -250,22 +250,22 @@ async function searchPopularCourses(roadmap: Roadmap): Promise<Roadmap> {
     // edX
     {
       platform: "edX",
-      title: `${topic} MicroMasters`,
-      url: `https://www.edx.org/search?q=${encoded}&type=MicroMasters`,
+      title: `${topic} Courses`,
+      url: `https://www.edx.org/search?q=${encoded}`,
       description: `Advanced ${topic} programs from Harvard, MIT`,
       free: false,
     },
     {
       platform: "edX",
-      title: `${topic} Executive Education`,
-      url: `https://www.edx.org/search?q=${encoded}&type=Executive%20Education`,
-      description: `Professional ${topic} development`,
+      title: `${topic} MicroMasters`,
+      url: `https://www.edx.org/micromasters?q=${encoded}`,
+      description: `Professional ${topic} certification`,
       free: false,
     },
     // Khan Academy (Free)
     {
       platform: "Khan Academy",
-      title: `${topic} Fundamentals`,
+      title: `${topic} Courses`,
       url: `https://www.khanacademy.org/search?search_query=${encoded}`,
       description: `Free world-class ${topic} education`,
       free: true,
@@ -273,7 +273,7 @@ async function searchPopularCourses(roadmap: Roadmap): Promise<Roadmap> {
     // freeCodeCamp (Free)
     {
       platform: "freeCodeCamp",
-      title: `${topic} Certification`,
+      title: `${topic} Curriculum`,
       url: `https://www.freecodecamp.org/learn`,
       description: `Free ${topic} curriculum with certification`,
       free: true,
@@ -297,7 +297,7 @@ async function searchPopularCourses(roadmap: Roadmap): Promise<Roadmap> {
     // Pluralsight
     {
       platform: "Pluralsight",
-      title: `${topic} Skill Paths`,
+      title: `${topic} Courses`,
       url: `https://www.pluralsight.com/search?q=${encoded}`,
       description: `Tech-focused ${topic} training`,
       free: false,
