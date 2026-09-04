@@ -50,9 +50,5 @@ export default function AdBanner({
 }
 
 export function AdPlaceholder({ position }: { position: string }) {
-  return (
-    <div className="my-6 rounded-xl border border-dashed border-white/10 bg-white/[0.02] flex items-center justify-center py-8">
-      <span className="text-xs text-gray-600">Advertisement ({position})</span>
-    </div>
-  );
+  return <div className="my-6 py-4" data-ad-position={position} />;
 }
