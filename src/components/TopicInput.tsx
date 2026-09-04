@@ -94,6 +94,12 @@ export default function TopicInput() {
               setTopic(e.target.value);
               setShowSuggestions(true);
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && topic.trim()) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
             onFocus={() => {
               setIsFocused(true);
               setShowSuggestions(true);
