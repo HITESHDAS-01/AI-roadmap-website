@@ -206,64 +206,113 @@ function getFallbackYouTube(topic: string, stepTitle: string) {
 }
 
 async function searchPopularCourses(roadmap: Roadmap): Promise<Roadmap> {
-  const isSerpAvailable = !!process.env.SERPAPI_KEY;
-  if (!isSerpAvailable) return roadmap;
-
   const topic = roadmap.topic;
-  const platforms = [
-    { name: "Coursera", domain: "coursera.org", free: false },
-    { name: "Udemy", domain: "udemy.com", free: false },
-    { name: "edX", domain: "edx.org", free: false },
-    { name: "Khan Academy", domain: "khanacademy.org", free: true },
-    { name: "freeCodeCamp", domain: "freecodecamp.org", free: true },
-    { name: "MIT OpenCourseWare", domain: "ocw.mit.edu", free: true },
-  ];
+  const encoded = encodeURIComponent(topic);
 
+  // Curated course links - direct URLs that work
   const courses: Array<{
     platform: string;
     title: string;
     url: string;
     description: string;
     free: boolean;
-    rating?: string;
-  }> = [];
+  }> = [
+    // Coursera
+    {
+      platform: "Coursera",
+      title: `${topic} Specialization`,
+      url: `https://www.coursera.org/search?query=${encoded}&topic=${encoded}`,
+      description: `University-level ${topic} courses from top institutions`,
+      free: false,
+    },
+    {
+      platform: "Coursera",
+      title: `${topic} Professional Certificate`,
+      url: `https://www.coursera.org/professional-certificates?query=${encoded}`,
+      description: `Professional ${topic} certification programs`,
+      free: false,
+    },
+    // Udemy
+    {
+      platform: "Udemy",
+      title: `${topic} - Top Rated Courses`,
+      url: `https://www.udemy.com/courses/search/?q=${encoded}&sort=relevance&ratings=4.0`,
+      description: `Best-rated ${topic} courses on Udemy`,
+      free: false,
+    },
+    {
+      platform: "Udemy",
+      title: `${topic} Bootcamp`,
+      url: `https://www.udemy.com/courses/search/?q=${encoded}+bootcamp`,
+      description: `Intensive ${topic} training programs`,
+      free: false,
+    },
+    // edX
+    {
+      platform: "edX",
+      title: `${topic} MicroMasters`,
+      url: `https://www.edx.org/search?q=${encoded}&type=MicroMasters`,
+      description: `Advanced ${topic} programs from Harvard, MIT`,
+      free: false,
+    },
+    {
+      platform: "edX",
+      title: `${topic} Executive Education`,
+      url: `https://www.edx.org/search?q=${encoded}&type=Executive%20Education`,
+      description: `Professional ${topic} development`,
+      free: false,
+    },
+    // Khan Academy (Free)
+    {
+      platform: "Khan Academy",
+      title: `${topic} Fundamentals`,
+      url: `https://www.khanacademy.org/search?search_query=${encoded}`,
+      description: `Free world-class ${topic} education`,
+      free: true,
+    },
+    // freeCodeCamp (Free)
+    {
+      platform: "freeCodeCamp",
+      title: `${topic} Certification`,
+      url: `https://www.freecodecamp.org/learn`,
+      description: `Free ${topic} curriculum with certification`,
+      free: true,
+    },
+    // MIT OpenCourseWare (Free)
+    {
+      platform: "MIT OpenCourseWare",
+      title: `${topic} - MIT Courses`,
+      url: `https://ocw.mit.edu/search/?q=${encoded}`,
+      description: `Free MIT ${topic} course materials`,
+      free: true,
+    },
+    // LinkedIn Learning
+    {
+      platform: "LinkedIn Learning",
+      title: `${topic} Learning Path`,
+      url: `https://www.linkedin.com/learning/search?keywords=${encoded}`,
+      description: `Professional ${topic} skill development`,
+      free: false,
+    },
+    // Pluralsight
+    {
+      platform: "Pluralsight",
+      title: `${topic} Skill Paths`,
+      url: `https://www.pluralsight.com/search?q=${encoded}`,
+      description: `Tech-focused ${topic} training`,
+      free: false,
+    },
+    // Skillshare
+    {
+      platform: "Skillshare",
+      title: `${topic} Classes`,
+      url: `https://www.skillshare.com/en/search?query=${encoded}`,
+      description: `Creative ${topic} classes and tutorials`,
+      free: false,
+    },
+  ];
 
-  // Search for courses on each platform (1 search per platform)
-  for (const platform of platforms) {
-    try {
-      const query = `${topic} course site:${platform.domain}`;
-      const results = await searchResources(query, 2);
-
-      for (const result of results) {
-        if (result.url.includes(platform.domain)) {
-          courses.push({
-            platform: platform.name,
-            title: result.title.replace(/ - (Coursera|Udemy|edX|Khan Academy|freeCodeCamp|MIT OpenCourseWare)$/i, "").trim(),
-            url: result.url,
-            description: result.snippet || `Learn ${topic} on ${platform.name}`,
-            free: platform.free,
-          });
-        }
-      }
-    } catch (err) {
-      console.error(`Failed to search ${platform.name}:`, err);
-    }
-  }
-
-  // Fallback if no courses found
-  if (courses.length === 0) {
-    const encoded = encodeURIComponent(topic);
-    courses.push(
-      { platform: "Coursera", title: `${topic} Specialization`, url: `https://www.coursera.org/search?query=${encoded}`, description: `University-level ${topic} courses`, free: false },
-      { platform: "Udemy", title: `${topic} Bootcamp`, url: `https://www.udemy.com/courses/search/?q=${encoded}`, description: `Practical ${topic} training`, free: false },
-      { platform: "edX", title: `${topic} Professional Certificate`, url: `https://www.edx.org/search?q=${encoded}`, description: `Professional ${topic} programs`, free: false },
-      { platform: "Khan Academy", title: `${topic} Fundamentals`, url: `https://www.khanacademy.org/search?search_query=${encoded}`, description: `Free ${topic} basics`, free: true },
-      { platform: "freeCodeCamp", title: `${topic} Bootcamp`, url: `https://www.freecodecamp.org/news/search/?query=${encoded}`, description: `Free ${topic} curriculum`, free: true },
-      { platform: "MIT OpenCourseWare", title: `${topic} MIT Course`, url: `https://ocw.mit.edu/search/?q=${encoded}`, description: `Free MIT ${topic} materials`, free: true },
-    );
-  }
-
-  return { ...roadmap, popularCourses: courses.slice(0, 12) };
+  return { ...roadmap, popularCourses: courses };
 }
 
 function generateFallbackRoadmap(topic: string): Roadmap {
