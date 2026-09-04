@@ -25,6 +25,7 @@ const ROADMAP_PROMPT = `Generate a learning roadmap as JSON. Follow this EXACT s
           "id": "step-1",
           "title": "Step title",
           "description": "Detailed description",
+          "summary": "2-3 sentence summary of what the learner will accomplish and why it matters",
           "duration": "estimated time",
           "difficulty": "beginner",
           "resources": [

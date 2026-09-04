@@ -18,6 +18,7 @@ When generating a roadmap, you MUST follow this exact JSON structure:
           "id": "step-1",
           "title": "Step title",
           "description": "Detailed description of what to learn",
+          "summary": "2-3 sentence summary of what the learner will accomplish and why it matters",
           "duration": "estimated time for this step",
           "difficulty": "beginner|intermediate|advanced",
           "resources": [],

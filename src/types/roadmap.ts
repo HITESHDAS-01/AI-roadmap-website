@@ -12,6 +12,7 @@ export interface RoadmapStep {
   id: string;
   title: string;
   description: string;
+  summary: string;
   duration: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   resources: Resource[];

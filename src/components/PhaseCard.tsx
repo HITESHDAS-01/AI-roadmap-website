@@ -176,7 +176,19 @@ export default function PhaseCard({
                     {isExpanded && (
                       <div className="px-3 sm:px-4 pb-4 space-y-4 border-t border-white/5 animate-slide-down">
                         <div className="pt-3">
-                          <p className="text-sm text-gray-300 leading-relaxed mb-3">
+                          {/* Summary */}
+                          {step.summary && (
+                            <div className="mb-3 p-3 rounded-lg bg-purple-500/5 border border-purple-500/10">
+                              <h5 className="text-[10px] font-medium text-purple-400 mb-1 uppercase tracking-wider">
+                                What You'll Learn
+                              </h5>
+                              <p className="text-sm text-gray-300 leading-relaxed">
+                                {step.summary}
+                              </p>
+                            </div>
+                          )}
+
+                          <p className="text-sm text-gray-400 leading-relaxed mb-3">
                             {step.description}
                           </p>
 
