@@ -185,13 +185,35 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
         y += 6;
       }
 
-      // Footer
+      // Footer + Watermark on every page
       const totalPages = doc.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
+
+        // Watermark - diagonal faint text
+        doc.setFontSize(40);
+        doc.setTextColor(240, 240, 240);
+        doc.setFont("helvetica", "bold");
+        const centerX = pageWidth / 2;
+        const centerY = doc.internal.pageSize.getHeight() / 2;
+        doc.text("RoadmapAI", centerX, centerY - 10, {
+          align: "center",
+          angle: 45,
+        });
+        doc.setFontSize(12);
+        doc.setTextColor(245, 245, 245);
+        doc.setFont("helvetica", "normal");
+        doc.text("roadmapai.dev", centerX, centerY + 5, {
+          align: "center",
+          angle: 45,
+        });
+
+        // Page number
         doc.setFontSize(7);
         doc.setTextColor(180, 180, 180);
+        doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 3, { align: "center" });
 
+        // Last page credits
         if (i === totalPages) {
           doc.setFontSize(8);
           doc.setTextColor(140, 140, 140);
@@ -200,8 +222,6 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
           doc.setTextColor(180, 180, 180);
           doc.text("AI-Powered Learning Roadmaps | roadmapai.dev", pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
         }
-
-        doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 3, { align: "center" });
       }
 
       const fileName = `${roadmap.topic.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}-roadmap.pdf`;
