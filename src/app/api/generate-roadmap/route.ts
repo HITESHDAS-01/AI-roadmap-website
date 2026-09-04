@@ -54,6 +54,9 @@ export async function POST(request: NextRequest) {
     // Fetch real resources: YouTube + Web for each step
     roadmap = await enrichRoadmapWithResources(roadmap);
 
+    // Search popular courses
+    roadmap = await searchPopularCourses(roadmap);
+
     return NextResponse.json(roadmap);
   } catch (error) {
     console.error("Roadmap generation error:", error);
@@ -200,6 +203,67 @@ function getFallbackYouTube(topic: string, stepTitle: string) {
     description: `Search YouTube for ${stepTitle} tutorials`,
     free: true,
   };
+}
+
+async function searchPopularCourses(roadmap: Roadmap): Promise<Roadmap> {
+  const isSerpAvailable = !!process.env.SERPAPI_KEY;
+  if (!isSerpAvailable) return roadmap;
+
+  const topic = roadmap.topic;
+  const platforms = [
+    { name: "Coursera", domain: "coursera.org", free: false },
+    { name: "Udemy", domain: "udemy.com", free: false },
+    { name: "edX", domain: "edx.org", free: false },
+    { name: "Khan Academy", domain: "khanacademy.org", free: true },
+    { name: "freeCodeCamp", domain: "freecodecamp.org", free: true },
+    { name: "MIT OpenCourseWare", domain: "ocw.mit.edu", free: true },
+  ];
+
+  const courses: Array<{
+    platform: string;
+    title: string;
+    url: string;
+    description: string;
+    free: boolean;
+    rating?: string;
+  }> = [];
+
+  // Search for courses on each platform (1 search per platform)
+  for (const platform of platforms) {
+    try {
+      const query = `${topic} course site:${platform.domain}`;
+      const results = await searchResources(query, 2);
+
+      for (const result of results) {
+        if (result.url.includes(platform.domain)) {
+          courses.push({
+            platform: platform.name,
+            title: result.title.replace(/ - (Coursera|Udemy|edX|Khan Academy|freeCodeCamp|MIT OpenCourseWare)$/i, "").trim(),
+            url: result.url,
+            description: result.snippet || `Learn ${topic} on ${platform.name}`,
+            free: platform.free,
+          });
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to search ${platform.name}:`, err);
+    }
+  }
+
+  // Fallback if no courses found
+  if (courses.length === 0) {
+    const encoded = encodeURIComponent(topic);
+    courses.push(
+      { platform: "Coursera", title: `${topic} Specialization`, url: `https://www.coursera.org/search?query=${encoded}`, description: `University-level ${topic} courses`, free: false },
+      { platform: "Udemy", title: `${topic} Bootcamp`, url: `https://www.udemy.com/courses/search/?q=${encoded}`, description: `Practical ${topic} training`, free: false },
+      { platform: "edX", title: `${topic} Professional Certificate`, url: `https://www.edx.org/search?q=${encoded}`, description: `Professional ${topic} programs`, free: false },
+      { platform: "Khan Academy", title: `${topic} Fundamentals`, url: `https://www.khanacademy.org/search?search_query=${encoded}`, description: `Free ${topic} basics`, free: true },
+      { platform: "freeCodeCamp", title: `${topic} Bootcamp`, url: `https://www.freecodecamp.org/news/search/?query=${encoded}`, description: `Free ${topic} curriculum`, free: true },
+      { platform: "MIT OpenCourseWare", title: `${topic} MIT Course`, url: `https://ocw.mit.edu/search/?q=${encoded}`, description: `Free MIT ${topic} materials`, free: true },
+    );
+  }
+
+  return { ...roadmap, popularCourses: courses.slice(0, 12) };
 }
 
 function generateFallbackRoadmap(topic: string): Roadmap {

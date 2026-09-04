@@ -200,65 +200,74 @@ export default function DownloadPDF({ roadmap }: { roadmap: Roadmap }) {
       }
 
       // Popular Online Courses Section
-      checkPage(80);
-      y += 5;
-
-      // Divider
-      doc.setDrawColor(168, 85, 247);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 10;
-
-      doc.setTextColor(168, 85, 247);
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text("Explore More on Popular Platforms", margin, y);
-      y += 8;
-
-      doc.setTextColor(100, 100, 100);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text("Continue your learning journey with these top platforms:", margin, y);
-      y += 10;
-
-      const topic = roadmap.topic;
-      const encoded = encodeURIComponent(topic);
-
-      const platforms = [
-        { name: "Coursera", desc: "University courses & certificates", url: `https://www.coursera.org/search?query=${encoded}` },
-        { name: "Udemy", desc: "Affordable practical courses", url: `https://www.udemy.com/courses/search/?q=${encoded}` },
-        { name: "edX", desc: "Harvard, MIT & top university courses", url: `https://www.edx.org/search?q=${encoded}` },
-        { name: "freeCodeCamp", desc: "Free coding bootcamps & tutorials", url: `https://www.freecodecamp.org/news/search/?query=${encoded}` },
-        { name: "Khan Academy", desc: "Free world-class education", url: `https://www.khanacademy.org/search?search_query=${encoded}` },
-        { name: "LinkedIn Learning", desc: "Professional skill development", url: `https://www.linkedin.com/learning/search?keywords=${encoded}` },
-        { name: "Pluralsight", desc: "Tech skills & certifications", url: `https://www.pluralsight.com/search?q=${encoded}` },
-        { name: "Skillshare", desc: "Creative & practical skills", url: `https://www.skillshare.com/en/search?query=${encoded}` },
-        { name: "MIT OpenCourseWare", desc: "Free MIT course materials", url: `https://ocw.mit.edu/search/?q=${encoded}` },
-        { name: "Stanford Online", desc: "Stanford courses & programs", url: `https://online.stanford.edu/search?q=${encoded}` },
-      ];
-
-      for (const platform of platforms) {
-        checkPage(12);
-
-        // Platform name
-        doc.setTextColor(40, 40, 40);
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "bold");
-        doc.text(`• ${platform.name}`, margin + 2, y);
+      const courses = roadmap.popularCourses || [];
+      if (courses.length > 0) {
+        checkPage(60);
         y += 5;
 
-        // Description
-        doc.setTextColor(100, 100, 100);
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        doc.text(platform.desc, margin + 8, y);
-        y += 4;
+        // Divider
+        doc.setDrawColor(168, 85, 247);
+        doc.setLineWidth(0.5);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 10;
 
-        // URL
-        doc.setTextColor(100, 140, 200);
-        doc.setFontSize(8);
-        doc.text(platform.url, margin + 8, y);
-        y += 7;
+        doc.setTextColor(168, 85, 247);
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("Best Courses to Learn " + roadmap.topic, margin, y);
+        y += 8;
+
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text("Top-rated courses from popular platforms:", margin, y);
+        y += 10;
+
+        // Group by platform
+        const grouped = courses.reduce((acc, course) => {
+          if (!acc[course.platform]) acc[course.platform] = [];
+          acc[course.platform].push(course);
+          return acc;
+        }, {} as Record<string, typeof courses>);
+
+        for (const [platform, platformCourses] of Object.entries(grouped)) {
+          checkPage(15);
+
+          // Platform header
+          doc.setTextColor(168, 85, 247);
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "bold");
+          doc.text(platform, margin + 2, y);
+          y += 6;
+
+          for (const course of platformCourses) {
+            checkPage(12);
+
+            // Course title
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            const titleText = course.free ? `${course.title} (Free)` : course.title;
+            doc.text(`• ${titleText}`, margin + 6, y);
+            y += 5;
+
+            // Description
+            doc.setTextColor(100, 100, 100);
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.text(course.description, margin + 10, y);
+            y += 4;
+
+            // URL
+            doc.setTextColor(100, 140, 200);
+            doc.setFontSize(8);
+            const urlText = course.url.length > 85 ? course.url.substring(0, 85) + "..." : course.url;
+            doc.text(urlText, margin + 10, y);
+            y += 6;
+          }
+
+          y += 4;
+        }
       }
 
       y += 5;

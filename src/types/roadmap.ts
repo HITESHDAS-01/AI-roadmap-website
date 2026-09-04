@@ -35,6 +35,16 @@ export interface Roadmap {
   totalEstimatedTime: string;
   phases: RoadmapPhase[];
   generatedAt: string;
+  popularCourses?: PopularCourse[];
+}
+
+export interface PopularCourse {
+  platform: string;
+  title: string;
+  url: string;
+  description: string;
+  free: boolean;
+  rating?: string;
 }
 
 export interface GenerateRoadmapRequest {
